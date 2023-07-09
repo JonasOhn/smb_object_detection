@@ -1,3 +1,5 @@
+Forked Repo for Team 5 of RSS2023.
+
 # Multimodal Object Detection and Mapping
 
 This package enables detection and localization of objects using camera and lidar inputs. Object detections in 2D images are mapped to lidar scans to retreive the 3D object postions to scale.
