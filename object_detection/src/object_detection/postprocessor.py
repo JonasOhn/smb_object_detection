@@ -33,7 +33,8 @@ class Postprocessor:
                 point_stamped = PointStamped()
                 point_stamped.header.frame_id = msg.header.frame_id
                 point_stamped.point = info.position
-                point_stamped.header.stamp = msg.header.stamp
+                #point_stamped.header.stamp = msg.header.stamp
+                point_stamped.header.stamp = rospy.Time(0)
                 world_point_stamped = self.listener.transformPoint(self.goal_frame, point_stamped)
                 world_pos = [world_point_stamped.point.x, world_point_stamped.point.y, world_point_stamped.point.z] 
 
@@ -42,10 +43,18 @@ class Postprocessor:
                 
                 matched = False
 
+                print("++++++++++++++++++")
+                print(self.artifacts[info.class_id])
                 for det_obj in self.artifacts[info.class_id]:
                     point_dist = math.dist(world_pos, det_obj['pos'])
                     
+                    print("===========")
+                    print(det_obj['pos'])
+                    print(world_pos)
+                    print(point_dist)
+
                     if point_dist < self.detection_threshold:
+                        print("Match!!!!")
                         
                         det_obj['point_cnt'] = det_obj['point_cnt'] + 1
                         det_obj['sum'] = det_obj['sum'] + world_pos
@@ -55,8 +64,11 @@ class Postprocessor:
 
                         matched = True
                         break
+                    else:
+                        print("not matched")
                 
                 if not matched:
+                    print("not matched")
                     self.artifacts[info.class_id].append({'pos':  world_pos,
                                                           'point_cnt': 1,
                                                           'sum': world_pos})
@@ -94,7 +106,7 @@ class Postprocessor:
 if __name__ == "__main__":
     rospy.init_node('postprocessor')
     # postprocessor = Postprocessor(filename="tmp", threshold=0.4, goal_frame="base_link")
-    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="base_link")
+    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="challenge_origin")
     
     try:
         postprocessor.run()
