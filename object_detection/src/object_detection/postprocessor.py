@@ -71,12 +71,20 @@ class Postprocessor:
                         break
                 
                 if not matched:
+                    try:
+                        (base_trans, base_rot) = self.listener.lookupTransform('rgb_camera_optical_link', self.goal_frame, point_stamped.header.stamp)
+                        # print("Translation:", base_trans)
+                        # print("Rotation:", base_rot)
+                    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                        rospy.logerr("Failed to get tf transformation")
+
                     print(f"Adding a new {info.class_id} at position {world_pos}")
                     self.artifacts[info.class_id].append({'pos':  world_pos,
                                                           'point_cnt': 1,
                                                           'sum': world_pos,
-                                                          'img_id': self.img_ids[info.class_id]})
-                    self.save_image(f"{info.class_id}_{self.img_ids[info.class_id]}.png")
+                                                          'img_id': self.img_ids[info.class_id],
+                                                          'robo_loc': base_trans})
+                    self.save_image(f"{info.class_id}_{self.img_ids[info.class_id]}_X_Y_.png")
                     self.img_ids[info.class_id] += 1
 
                 self.save_to_csv()
@@ -96,12 +104,13 @@ class Postprocessor:
         output_file = f"{self.filename}_{self.it%2}.csv"
         with open(output_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects', 'obj_id'])
+            writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects', 'obj_id', 'robo_X', 'robo_Y', 'robo_Z'])
             for label, lists in self.artifacts.items():
                 for res in lists:
                     if res['point_cnt'] > self.no_pts_threshold:
                         writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], 
-                                         res['point_cnt'], res['img_id']])
+                                         res['point_cnt'], res['img_id'], 
+                                         res['robo_loc'][0], res['robo_loc'][1], res['robo_loc'][2]])
         print(f"Data written to {output_file}")
         self.it += 1
         self.it %= 2
@@ -120,12 +129,13 @@ class Postprocessor:
     def run(self):
         while not rospy.is_shutdown():
             rospy.spin()
+            self.listener.waitForTransform('baselink', 'goal_link', rospy.Time(), rospy.Duration(4.0))
 
 
 if __name__ == "__main__":
     rospy.init_node('postprocessor')
-    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="base_link")
-    # postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="challenge_origin")
+    # postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="base_link")
+    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="challenge_origin")
     
     try:
         postprocessor.run()
