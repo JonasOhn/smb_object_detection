@@ -80,10 +80,10 @@ class Postprocessor:
         output_file = f"{self.filename}_{self.it%2}.csv"
         with open(output_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Label', 'X', 'Y', 'Z'])
+            writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects'])
             for label, lists in self.artifacts.items():
                 for res in lists:
-                    writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2]])
+                    writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], res['point_cnt']])
         print(f"Data written to {output_file}")
         self.it += 1
         self.it %= 2
