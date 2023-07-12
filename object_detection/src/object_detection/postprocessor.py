@@ -3,7 +3,10 @@ import math
 import csv
 import tf
 import rospy
+import cv2
 from geometry_msgs.msg import Point, PointStamped
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 from object_detection_msgs.msg import ObjectDetectionInfoArray
 
 class Postprocessor:
@@ -17,8 +20,12 @@ class Postprocessor:
         self.last_msg_time = None
         self.it = 0
         self.no_pts_threshold = 3
+        self.img_ids = {}
+        self.img = None
+        self.bridge = CvBridge()
 
         self.detections_sub = rospy.Subscriber("/object_detector/detection_info", ObjectDetectionInfoArray, self.detection_callback)
+        self.img_sub = rospy.Subscriber("/object_detector/detections_in_image", Image, self.img_callback)
         self.listener = tf.TransformListener()
         # self.timer = rospy.Timer(rospy.Duration(1.0), self.timer_callback) # TODO: delete if not used
         rospy.on_shutdown(self.shutdown_procedure)
@@ -41,6 +48,7 @@ class Postprocessor:
 
                 if info.class_id not in self.artifacts:
                     self.artifacts[info.class_id] = []
+                    self.img_ids[info.class_id] = 0
                 
                 matched = False
 
@@ -66,7 +74,11 @@ class Postprocessor:
                     print(f"Adding a new {info.class_id} at position {world_pos}")
                     self.artifacts[info.class_id].append({'pos':  world_pos,
                                                           'point_cnt': 1,
-                                                          'sum': world_pos})
+                                                          'sum': world_pos,
+                                                          'img_id': self.img_ids[info.class_id]})
+                    self.save_image(f"imgs/{info.class_id}_{self.img_ids[info.class_id]}.png")
+                    self.img_ids[info.class_id] += 1
+
                 self.save_to_csv()
             except Exception as e:
                 print(e)
@@ -76,19 +88,30 @@ class Postprocessor:
             if rospy.get_time() - self.last_msg_time > self.timeout:
                 self.timer.shutdown()
                 self.save_to_csv()
+    
+    def img_callback(self, msg):
+        self.img = msg
 
     def save_to_csv(self):
         output_file = f"{self.filename}_{self.it%2}.csv"
         with open(output_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects'])
+            writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects', 'obj_id'])
             for label, lists in self.artifacts.items():
                 for res in lists:
                     if res['point_cnt'] > self.no_pts_threshold:
-                        writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], res['point_cnt']])
+                        writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], 
+                                         res['point_cnt'], res['img_id']])
         print(f"Data written to {output_file}")
         self.it += 1
         self.it %= 2
+    
+    def save_image(self, filename):
+        try:
+            cv2_img = self.bridge.imgmsg_to_cv2(self.img, "bgr8")
+            cv2.imwrite(filename, cv2_img)
+        except Exception as e:
+            print(e)            
 
     def shutdown_procedure(self):
         self.save_to_csv()
