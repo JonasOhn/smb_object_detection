@@ -19,7 +19,7 @@ class Postprocessor:
         self.goal_frame = goal_frame
         self.last_msg_time = None
         self.it = 0
-        self.no_pts_threshold = 3
+        self.no_pts_threshold = 0
         self.img_ids = {}
         self.img = None
         self.bridge = CvBridge()
@@ -76,7 +76,7 @@ class Postprocessor:
                                                           'point_cnt': 1,
                                                           'sum': world_pos,
                                                           'img_id': self.img_ids[info.class_id]})
-                    self.save_image(f"imgs/{info.class_id}_{self.img_ids[info.class_id]}.png")
+                    self.save_image(f"{info.class_id}_{self.img_ids[info.class_id]}.png")
                     self.img_ids[info.class_id] += 1
 
                 self.save_to_csv()
@@ -109,6 +109,7 @@ class Postprocessor:
     def save_image(self, filename):
         try:
             cv2_img = self.bridge.imgmsg_to_cv2(self.img, "bgr8")
+            print(filename)
             cv2.imwrite(filename, cv2_img)
         except Exception as e:
             print(e)            
@@ -123,8 +124,8 @@ class Postprocessor:
 
 if __name__ == "__main__":
     rospy.init_node('postprocessor')
-    # postprocessor = Postprocessor(filename="tmp", threshold=0.4, goal_frame="base_link")
-    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="challenge_origin")
+    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="base_link")
+    # postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="challenge_origin")
     
     try:
         postprocessor.run()
