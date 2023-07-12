@@ -56,7 +56,7 @@ class Postprocessor:
                     if point_dist < self.detection_threshold:
                         print("Match!!!!")
                         
-                        summed = det_obj['sum'] + world_pos
+                        summed = [sum(x) for x in zip(world_pos, det_obj['sum'])]
                         no_pts = det_obj['point_cnt'] + 1
 
 
