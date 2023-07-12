@@ -19,7 +19,7 @@ class Postprocessor:
 
         self.detections_sub = rospy.Subscriber("/object_detector/detection_info", ObjectDetectionInfoArray, self.detection_callback)
         self.listener = tf.TransformListener()
-        self.timer = rospy.Timer(rospy.Duration(1.0), self.timer_callback) # TODO: delete if not used
+        # self.timer = rospy.Timer(rospy.Duration(1.0), self.timer_callback) # TODO: delete if not used
         rospy.on_shutdown(self.shutdown_procedure)
 
     def detection_callback(self, msg):
@@ -35,7 +35,7 @@ class Postprocessor:
                 point_stamped.point = info.position
                 point_stamped.header.stamp = msg.header.stamp
                 world_point_stamped = self.listener.transformPoint(self.goal_frame, point_stamped)
-                world_pos = world_point_stamped.point
+                world_pos = [world_point_stamped.point.x, world_point_stamped.point.y, world_point_stamped.point.z] 
 
                 if info.class_id not in self.artifacts:
                     self.artifacts[info.class_id] = []
@@ -43,27 +43,23 @@ class Postprocessor:
                 matched = False
 
                 for det_obj in self.artifacts[info.class_id]:
-                    point_dist = math.dist([world_pos.x, world_pos.y, world_pos.z], 
-                                           [det_obj['pos'].x, det_obj['pos'].y, det_obj['pos'].z])
+                    point_dist = math.dist(world_pos, det_obj['pos'])
                     
                     if point_dist < self.detection_threshold:
                         
                         det_obj['point_cnt'] = det_obj['point_cnt'] + 1
                         det_obj['sum'] = det_obj['sum'] + world_pos
-                        
-                        updated_point = Point()
-                        updated_point.x = det_obj['sum'].x / det_obj['point_cnt']
-                        updated_point.y = det_obj['sum'].y / det_obj['point_cnt']
-                        updated_point.z = det_obj['sum'].z / det_obj['point_cnt']
-                        det_obj['pos'] = updated_point
+                        det_obj['pos'][0] = det_obj['sum'][0] / det_obj['point_cnt']
+                        det_obj['pos'][1] = det_obj['sum'][1] / det_obj['point_cnt']
+                        det_obj['pos'][2] = det_obj['sum'][2] / det_obj['point_cnt']
 
                         matched = True
                         break
                 
                 if not matched:
                     self.artifacts[info.class_id].append({'pos':  world_pos,
-                                                             'point_cnt': 1,
-                                                             'sum': world_pos})
+                                                          'point_cnt': 1,
+                                                          'sum': world_pos})
                 print(self.artifacts)
                 self.save_to_csv()
             except Exception as e:
@@ -82,7 +78,7 @@ class Postprocessor:
             writer.writerow(['Label', 'X', 'Y', 'Z'])
             for label, lists in self.artifacts.items():
                 for res in lists:
-                    writer.writerow([label, res['pos'].x, res['pos'].y, res['pos'].z])
+                    writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2]])
         print(f"Data written to {output_file}")
         self.it += 1
         self.it %= 2
@@ -97,7 +93,8 @@ class Postprocessor:
 
 if __name__ == "__main__":
     rospy.init_node('postprocessor')
-    postprocessor = Postprocessor(filename="tmp", threshold=0.4, goal_frame="base_link")
+    # postprocessor = Postprocessor(filename="tmp", threshold=0.4, goal_frame="base_link")
+    postprocessor = Postprocessor(filename="tmp", threshold=1.0, goal_frame="base_link")
     
     try:
         postprocessor.run()
