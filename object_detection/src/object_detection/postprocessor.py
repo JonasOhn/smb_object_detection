@@ -43,41 +43,29 @@ class Postprocessor:
                 
                 matched = False
 
-                print("++++++++++++++++++")
-                print(self.artifacts[info.class_id])
                 for det_obj in self.artifacts[info.class_id]:
                     point_dist = math.dist(world_pos, det_obj['pos'])
-                    
-                    print("===========")
-                    print(det_obj['pos'])
-                    print(world_pos)
-                    print(point_dist)
-
+                
                     if point_dist < self.detection_threshold:
-                        print("Match!!!!")
                         
                         summed = [sum(x) for x in zip(world_pos, det_obj['sum'])]
                         no_pts = det_obj['point_cnt'] + 1
 
-
                         det_obj['point_cnt'] = no_pts
                         det_obj['sum'] = summed
-                        avg_sum = list(summed)  # create a copy of the sum
+                        avg_sum = list(summed)
                         det_obj['pos'][0] = avg_sum[0] / no_pts
                         det_obj['pos'][1] = avg_sum[1] / no_pts
                         det_obj['pos'][2] = avg_sum[2] / no_pts
 
                         matched = True
                         break
-                    else:
-                        print("not matched")
                 
                 if not matched:
-                    print("not matched")
+                    print(f"Adding a new {info.class_id} at position {world_pos}")
                     self.artifacts[info.class_id].append({'pos':  world_pos,
                                                           'point_cnt': 1,
                                                           'sum': world_pos})
-                print(self.artifacts)
                 self.save_to_csv()
             except Exception as e:
                 print(e)
