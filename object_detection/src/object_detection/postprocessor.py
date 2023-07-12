@@ -56,11 +56,15 @@ class Postprocessor:
                     if point_dist < self.detection_threshold:
                         print("Match!!!!")
                         
-                        det_obj['point_cnt'] = det_obj['point_cnt'] + 1
-                        det_obj['sum'] = det_obj['sum'] + world_pos
-                        det_obj['pos'][0] = det_obj['sum'][0] / det_obj['point_cnt']
-                        det_obj['pos'][1] = det_obj['sum'][1] / det_obj['point_cnt']
-                        det_obj['pos'][2] = det_obj['sum'][2] / det_obj['point_cnt']
+                        summed = det_obj['sum'] + world_pos
+                        no_pts = det_obj['point_cnt'] + 1
+
+
+                        det_obj['point_cnt'] = no_pts
+                        det_obj['sum'] = summed
+                        det_obj['pos'][0] = summed[0] / no_pts
+                        det_obj['pos'][1] = summed[1] / no_pts
+                        det_obj['pos'][2] = summed[2] / no_pts
 
                         matched = True
                         break
