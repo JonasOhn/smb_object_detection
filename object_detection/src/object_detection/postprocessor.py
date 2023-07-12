@@ -62,9 +62,10 @@ class Postprocessor:
 
                         det_obj['point_cnt'] = no_pts
                         det_obj['sum'] = summed
-                        det_obj['pos'][0] = summed[0] / no_pts
-                        det_obj['pos'][1] = summed[1] / no_pts
-                        det_obj['pos'][2] = summed[2] / no_pts
+                        avg_sum = list(summed)  # create a copy of the sum
+                        det_obj['pos'][0] = avg_sum[0] / no_pts
+                        det_obj['pos'][1] = avg_sum[1] / no_pts
+                        det_obj['pos'][2] = avg_sum[2] / no_pts
 
                         matched = True
                         break
