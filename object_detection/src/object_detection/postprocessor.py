@@ -16,6 +16,7 @@ class Postprocessor:
         self.goal_frame = goal_frame
         self.last_msg_time = None
         self.it = 0
+        self.no_pts_threshold = 3
 
         self.detections_sub = rospy.Subscriber("/object_detector/detection_info", ObjectDetectionInfoArray, self.detection_callback)
         self.listener = tf.TransformListener()
@@ -83,7 +84,8 @@ class Postprocessor:
             writer.writerow(['Label', 'X', 'Y', 'Z', 'no_detects'])
             for label, lists in self.artifacts.items():
                 for res in lists:
-                    writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], res['point_cnt']])
+                    if res['point_cnt'] > self.no_pts_threshold:
+                        writer.writerow([label, res['pos'][0], res['pos'][1], res['pos'][2], res['point_cnt']])
         print(f"Data written to {output_file}")
         self.it += 1
         self.it %= 2
