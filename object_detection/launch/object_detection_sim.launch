@@ -30,7 +30,7 @@
   <!-- default default default="[0, 24, 25, 28, 32, 39, 41, 45, 46, 47, 56]" -->
   <!-- (not in order) backpack, umbrella, bottle, stop sign, chair, clock="[11, 24, 25, 39, 56, 74]" -->
   <arg  name="object_detection_classes" 
-        default="[11, 24, 25, 39, 56, 74]"
+        default="[0, 10, 11, 24]"
         doc=  "List of the ids of classes for detection. Based on the COCO dataset, refer here: https://github.com/ethz-asl/darknet_catkin/blob/master/data/coco.names. NOTICE, class ids start at 0."/>
 
   <arg  name="model_dir_path" 
